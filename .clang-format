@@ -1,0 +1,21 @@
+---
+BasedOnStyle: LLVM
+AccessModifierOffset: -4
+AlignArrayOfStructures: Right
+AlignConsecutiveBitFields:
+  Enabled: true
+AlignConsecutiveShortCaseStatements:
+  Enabled: true
+AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Inline
+BreakConstructorInitializers: BeforeComma
+BreakInheritanceList: BeforeComma
+ColumnLimit: 120
+IndentWidth: 4
+InsertNewlineAtEOF: true
+IntegerLiteralSeparator:
+  Binary: 8
+  Decimal: 3
+NamespaceIndentation: All
+TabWidth: 4
+UseTab: ForIndentation
