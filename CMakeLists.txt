@@ -5,7 +5,17 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_executable(Vic3MapUtils src/main.cpp
 		src/SplineNetwork/SplineNetwork.cpp
-		src/SplineNetwork/SplineNetwork.hpp)
+		src/SplineNetwork/SplineNetwork.hpp
+		src/util.cpp
+		src/util.hpp
+		src/SplineNetwork/Anchor.cpp
+		src/SplineNetwork/Anchor.hpp
+		src/SplineNetwork/FileHandler/SplnetFileReader.cpp
+		src/SplineNetwork/FileHandler/SplnetFileReader.hpp
+		src/SplineNetwork/Route.cpp
+		src/SplineNetwork/Route.hpp
+		src/SplineNetwork/Strip.cpp
+		src/SplineNetwork/Strip.hpp)
 
 include(FetchContent)
 
