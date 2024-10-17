@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FileHandler/SplnetFileReader.hpp"
+#include "FileHandler/SplnetFileWriter.hpp"
 
 #include <vector>
 
@@ -10,4 +11,6 @@ class Route {
 
 public:
 	explicit Route(SplnetFileReader &fileReader, bool isFinal = false);
+
+	void writeToFile(SplnetFileWriter &fileWriter, bool isFinal = false) const;
 };

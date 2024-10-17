@@ -25,4 +25,6 @@ class SplineNetwork {
 
 public:
 	explicit SplineNetwork(const std::filesystem::path &path);
+
+	void writeToFile(const std::filesystem::path &path) const;
 };

@@ -20,3 +20,20 @@ Strip::Strip(SplnetFileReader &fileReader, bool isFinal) {
 
 	fileReader.expectElementFooter(isFinal);
 }
+void Strip::writeToFile(SplnetFileWriter &fileWriter, bool isFinal) const {
+	fileWriter.writeElementHeader();
+
+	fileWriter.write<uint16_t>(0x029c);
+	fileWriter.write(_sourceID);
+	fileWriter.write(_destinationID);
+	fileWriter.write<uint16_t>(0x05f5);
+	fileWriter.write<uint16_t>(0x0001);
+	fileWriter.write<uint16_t>(0x0003);
+
+	for (const uint64_t &routeID : _routeIDs) {
+		fileWriter.write<uint16_t>(0x029c);
+		fileWriter.write(routeID);
+	}
+
+	fileWriter.writeElementFooter(isFinal);
+}

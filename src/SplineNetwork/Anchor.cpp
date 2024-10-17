@@ -15,3 +15,18 @@ Anchor::Anchor(SplnetFileReader &fileReader, bool isFinal) {
 
 	fileReader.expectElementFooter(isFinal);
 }
+void Anchor::writeToFile(SplnetFileWriter &fileWriter, bool isFinal) const {
+	fileWriter.writeElementHeader();
+
+	fileWriter.write<uint16_t>(0x14);
+	fileWriter.write(_id);
+	fileWriter.write<uint16_t>(0x4c);
+	fileWriter.write<uint16_t>(0x01);
+	fileWriter.write<uint16_t>(0x03);
+	fileWriter.write<uint16_t>(0x0d);
+	fileWriter.write(_posX);
+	fileWriter.write<uint16_t>(0x0d);
+	fileWriter.write(_posY);
+
+	fileWriter.writeElementFooter(isFinal);
+}

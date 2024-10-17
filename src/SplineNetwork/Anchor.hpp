@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FileHandler/SplnetFileReader.hpp"
+#include "FileHandler/SplnetFileWriter.hpp"
 
 class Anchor {
 	// How to interpret this field is unclear, either it's a 32-bit ID with special meaning to bits 23 and 28,
@@ -14,4 +15,6 @@ class Anchor {
 
 public:
 	explicit Anchor(SplnetFileReader &fileReader, bool isFinal = false);
+
+	void writeToFile(SplnetFileWriter &fileWriter, bool isFinal = false) const;
 };

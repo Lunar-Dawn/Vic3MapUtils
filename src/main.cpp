@@ -18,5 +18,8 @@ int main(int argc, char *argv[]) {
 	SplineNetwork vanillaNetwork(argv[1]);
 	SplineNetwork modNetwork(argv[2]);
 
+	vanillaNetwork.writeToFile("./out.splnet");
+	modNetwork.writeToFile("./out2.splnet");
+
 	return 0;
 }
