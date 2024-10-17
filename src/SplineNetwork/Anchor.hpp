@@ -17,4 +17,10 @@ public:
 	explicit Anchor(SplnetFileReader &fileReader, bool isFinal = false);
 
 	void writeToFile(SplnetFileWriter &fileWriter, bool isFinal = false) const;
+
+	[[nodiscard]] auto id() const { return _id; }
+	[[nodiscard]] bool isSubAnchor() const { return _id & (1 << 28); }
+	[[nodiscard]] bool isWaterAnchor() const { return _id & (1 << 23); }
+	/// The id without the signaling bits, as entered in the editor
+	[[nodiscard]] auto niceID() const { return _id & ((1 << 23) - 1); }
 };

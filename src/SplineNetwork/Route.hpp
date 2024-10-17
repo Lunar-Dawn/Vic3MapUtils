@@ -13,4 +13,6 @@ public:
 	explicit Route(SplnetFileReader &fileReader, bool isFinal = false);
 
 	void writeToFile(SplnetFileWriter &fileWriter, bool isFinal = false) const;
+
+	[[nodiscard]] auto id() const { return _id; }
 };
