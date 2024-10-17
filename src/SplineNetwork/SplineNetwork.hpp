@@ -7,16 +7,16 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
-#include <vector>
+#include <map>
 
 class SplineNetwork {
 	uint32_t _anchorCount = 0;
 	uint32_t _routeCount = 0;
 	uint32_t _stripCount = 0;
 
-	std::vector<Anchor> _anchors;
-	std::vector<Route> _routes;
-	std::vector<Strip> _strips;
+	std::map<uint32_t, Anchor> _anchors;
+	std::map<uint32_t, Route> _routes;
+	std::map<std::pair<uint32_t, uint32_t>, Strip> _strips;
 
 	void parseFileHeader(SplnetFileReader &fileReader);
 	void parseAnchorList(SplnetFileReader &fileReader);

@@ -37,28 +37,25 @@ void SplineNetwork::parseFileHeader(SplnetFileReader &fileReader) {
 void SplineNetwork::parseAnchorList(SplnetFileReader &fileReader) {
 	fileReader.expectSectionHeader(0x05f4);
 
-	_anchors.reserve(_anchorCount);
-
 	for (int i = 0; i < _anchorCount; ++i) {
-		_anchors.emplace_back(fileReader, i == _anchorCount - 1);
+		Anchor anchor(fileReader, i == _anchorCount - 1);
+		_anchors.emplace(anchor.id(), anchor);
 	}
 }
 void SplineNetwork::parseRouteList(SplnetFileReader &fileReader) {
 	fileReader.expectSectionHeader(0x05f5);
 
-	_routes.reserve(_routeCount);
-
 	for (int i = 0; i < _routeCount; ++i) {
-		_routes.emplace_back(fileReader, i == _routeCount - 1);
+		Route route(fileReader, i == _routeCount - 1);
+		_routes.emplace(route.id(), std::move(route));
 	}
 }
 void SplineNetwork::parseStripList(SplnetFileReader &fileReader) {
 	fileReader.expectSectionHeader(0x05f6);
 
-	_strips.reserve(_stripCount);
-
 	for (int i = 0; i < _stripCount; ++i) {
-		_strips.emplace_back(fileReader, i == _stripCount - 1);
+		Strip strip(fileReader, i == _stripCount - 1);
+		_strips.emplace(std::pair{strip.rawDestinationID(), strip.rawSourceID()}, strip);
 	}
 }
 
@@ -82,17 +79,17 @@ void SplineNetwork::writeToFile(const std::filesystem::path &path) const {
 	fileWriter.write<uint16_t>(0x0004);
 
 	fileWriter.writeSectionHeader(0x05f4);
-	for (int i = 0; i < _anchorCount; ++i) {
-		_anchors[i].writeToFile(fileWriter, i == _anchorCount - 1);
-	}
+	for (auto it = _anchors.cbegin(); it != _anchors.cend(); ++it) {
+		it->second.writeToFile(fileWriter, it == std::prev(_anchors.cend()));
+	};
 
 	fileWriter.writeSectionHeader(0x05f5);
-	for (int i = 0; i < _routeCount; ++i) {
-		_routes[i].writeToFile(fileWriter, i == _routeCount - 1);
-	}
+	for (auto it = _routes.cbegin(); it != _routes.cend(); ++it) {
+		it->second.writeToFile(fileWriter, it == std::prev(_routes.cend()));
+	};
 
 	fileWriter.writeSectionHeader(0x05f6);
-	for (int i = 0; i < _stripCount; ++i) {
-		_strips[i].writeToFile(fileWriter, i == _stripCount - 1);
-	}
+	for (auto it = _strips.cbegin(); it != _strips.cend(); ++it) {
+		it->second.writeToFile(fileWriter, it == std::prev(_strips.cend()));
+	};
 }
