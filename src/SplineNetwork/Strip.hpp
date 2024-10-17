@@ -40,5 +40,5 @@ public:
 	[[nodiscard]] auto rawSourceID() const { return _sourceID; }
 	[[nodiscard]] auto rawDestinationID() const { return _destinationID; }
 
-	[[nodiscard]] auto type() const { return (Type)(_sourceID & (1 << 6) - 1); }
+	[[nodiscard]] auto type() const { return (Type)(_sourceID & ((1 << 6) - 1)); }
 };

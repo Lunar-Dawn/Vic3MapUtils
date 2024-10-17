@@ -29,3 +29,10 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(fmt)
 target_link_libraries(Vic3MapUtils fmt::fmt)
+
+if (MSVC)
+	target_compile_options(Vic3MapUtils PRIVATE /W4 /WX)
+else ()
+	target_compile_options(Vic3MapUtils PRIVATE -Wall -Wextra -Wpedantic -Werror)
+endif ()
+

@@ -37,7 +37,7 @@ void SplineNetwork::parseFileHeader(SplnetFileReader &fileReader) {
 void SplineNetwork::parseAnchorList(SplnetFileReader &fileReader) {
 	fileReader.expectSectionHeader(0x05f4);
 
-	for (int i = 0; i < _anchorCount; ++i) {
+	for (uint32_t i = 0; i < _anchorCount; ++i) {
 		Anchor anchor(fileReader, i == _anchorCount - 1);
 		_anchors.emplace(anchor.id(), anchor);
 	}
@@ -45,7 +45,7 @@ void SplineNetwork::parseAnchorList(SplnetFileReader &fileReader) {
 void SplineNetwork::parseRouteList(SplnetFileReader &fileReader) {
 	fileReader.expectSectionHeader(0x05f5);
 
-	for (int i = 0; i < _routeCount; ++i) {
+	for (uint32_t i = 0; i < _routeCount; ++i) {
 		Route route(fileReader, i == _routeCount - 1);
 		_routes.emplace(route.id(), std::move(route));
 	}
@@ -53,7 +53,7 @@ void SplineNetwork::parseRouteList(SplnetFileReader &fileReader) {
 void SplineNetwork::parseStripList(SplnetFileReader &fileReader) {
 	fileReader.expectSectionHeader(0x05f6);
 
-	for (int i = 0; i < _stripCount; ++i) {
+	for (uint32_t i = 0; i < _stripCount; ++i) {
 		Strip strip(fileReader, i == _stripCount - 1);
 		_strips.emplace(std::pair{strip.rawDestinationID(), strip.rawSourceID()}, strip);
 	}
