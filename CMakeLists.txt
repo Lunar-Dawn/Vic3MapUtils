@@ -28,7 +28,14 @@ FetchContent_Declare(
 		GIT_TAG 0c9fce2ffefecfdce794e1859584e25877b7b592 # 11.0.2
 )
 FetchContent_MakeAvailable(fmt)
-target_link_libraries(Vic3MapUtils fmt::fmt)
+target_link_libraries(Vic3MapUtils PRIVATE fmt::fmt)
+
+FetchContent_Declare(
+		json
+		URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz
+)
+FetchContent_MakeAvailable(json)
+target_link_libraries(Vic3MapUtils PRIVATE nlohmann_json::nlohmann_json)
 
 if (MSVC)
 	target_compile_options(Vic3MapUtils PRIVATE /W4 /WX)

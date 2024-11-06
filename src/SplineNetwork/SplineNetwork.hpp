@@ -79,3 +79,8 @@ public:
 	/// Usually called on the vanilla network
 	void applyDiff(const Diff &diff);
 };
+
+/// Not 100% pleased with using underscored internal ids in the json export
+/// But since they're meant to be ephemeral it's fine to save a lot of boilerplate
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(SplineNetwork::Diff, _anchorsDeleted, _anchorsAdded, _stripsDeleted, _stripsAdded,
+                                   _routesDeleted, _routesAdded);

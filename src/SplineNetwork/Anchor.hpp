@@ -3,6 +3,8 @@
 #include "FileHandler/SplnetFileReader.hpp"
 #include "FileHandler/SplnetFileWriter.hpp"
 
+#include <nlohmann/json.hpp>
+
 class Anchor {
 	// How to interpret this field is unclear, either it's a 32-bit ID with special meaning to bits 23 and 28,
 	// an 8-bit flags field with only bit 4 used right now followed by a 24-bit ID with special meaning on bit 23
@@ -14,6 +16,7 @@ class Anchor {
 	float _posY;
 
 public:
+	Anchor() = default;
 	explicit Anchor(SplnetFileReader &fileReader, bool isFinal = false);
 
 	void writeToFile(SplnetFileWriter &fileWriter, bool isFinal = false) const;
@@ -25,4 +28,6 @@ public:
 	[[nodiscard]] auto niceID() const { return _id & ((1 << 23) - 1); }
 
 	bool operator==(const Anchor &other) const = default;
+
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Anchor, _id, _posX, _posY);
 };

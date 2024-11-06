@@ -22,9 +22,20 @@ int main(int argc, char *argv[]) {
 	auto diffedNetwork = vanillaNetwork;
 	diffedNetwork.applyDiff(diff);
 
+	std::ofstream outFileDiff("./test.json");
+	nlohmann::json jsonOut = diff;
+	outFileDiff << jsonOut.dump(4);
+	outFileDiff.close();
+
+	std::ifstream inFileDiff("./test.json");
+	auto importDiff = nlohmann::json::parse(inFileDiff).get<SplineNetwork::Diff>();
+	auto importedNetwork = vanillaNetwork;
+	importedNetwork.applyDiff(importDiff);
+
 	vanillaNetwork.writeToFile("./out.splnet");
 	modNetwork.writeToFile("./out2.splnet");
 	diffedNetwork.writeToFile("./out3.splnet");
+	importedNetwork.writeToFile("./out4.splnet");
 
 	return 0;
 }

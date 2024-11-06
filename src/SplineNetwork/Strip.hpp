@@ -5,6 +5,8 @@
 
 #include <vector>
 
+#include <nlohmann/json.hpp>
+
 class Strip {
 public:
 	enum class Type : uint8_t {
@@ -30,6 +32,7 @@ private:
 	std::vector<uint64_t> _routeIDs;
 
 public:
+	Strip() = default;
 	explicit Strip(SplnetFileReader &fileReader, bool isFinal = false);
 
 	void writeToFile(SplnetFileWriter &fileWriter, bool isFinal = false) const;
@@ -45,4 +48,6 @@ public:
 	/// Id pair, used as std::map id, since it maps cleanly onto the sorting order used in the files
 	[[nodiscard]] std::pair<uint32_t, uint32_t> idPair() const { return {rawDestinationID(), rawSourceID()}; }
 	bool operator==(const Strip &other) const = default;
+
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Strip, _sourceID, _destinationID, _routeIDs);
 };
