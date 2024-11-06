@@ -41,4 +41,8 @@ public:
 	[[nodiscard]] auto rawDestinationID() const { return _destinationID; }
 
 	[[nodiscard]] auto type() const { return (Type)(_sourceID & ((1 << 6) - 1)); }
+
+	/// Id pair, used as std::map id, since it maps cleanly onto the sorting order used in the files
+	[[nodiscard]] std::pair<uint32_t, uint32_t> idPair() const { return {rawDestinationID(), rawSourceID()}; }
+	bool operator==(const Strip &other) const = default;
 };

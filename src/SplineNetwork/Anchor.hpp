@@ -23,4 +23,6 @@ public:
 	[[nodiscard]] bool isWaterAnchor() const { return _id & (1 << 23); }
 	/// The id without the signaling bits, as entered in the editor
 	[[nodiscard]] auto niceID() const { return _id & ((1 << 23) - 1); }
+
+	bool operator==(const Anchor &other) const = default;
 };

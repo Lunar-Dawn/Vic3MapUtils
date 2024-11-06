@@ -1,8 +1,10 @@
 #include "SplineNetwork.hpp"
 
 #include <filesystem>
+#include <iostream>
 
 #include <fmt/format.h>
+#include <fmt/ostream.h>
 
 #include "FileHandler/SplnetFileReader.hpp"
 #include "FileHandler/SplnetFileWriter.hpp"
@@ -55,7 +57,7 @@ void SplineNetwork::parseStripList(SplnetFileReader &fileReader) {
 
 	for (uint32_t i = 0; i < _stripCount; ++i) {
 		Strip strip(fileReader, i == _stripCount - 1);
-		_strips.emplace(std::pair{strip.rawDestinationID(), strip.rawSourceID()}, strip);
+		_strips.emplace(strip.idPair(), strip);
 	}
 }
 
@@ -92,4 +94,95 @@ void SplineNetwork::writeToFile(const std::filesystem::path &path) const {
 	for (auto it = _strips.cbegin(); it != _strips.cend(); ++it) {
 		it->second.writeToFile(fileWriter, it == std::prev(_strips.cend()));
 	};
+}
+
+SplineNetwork::Diff SplineNetwork::calculateDiff(const SplineNetwork &other) {
+	Diff diff;
+
+	diffMaps(_anchors, other._anchors, std::back_inserter(diff._anchorsDeleted),
+	         std::back_inserter(diff._anchorsAdded));
+
+	diffMaps(_strips, other._strips, std::back_inserter(diff._stripsDeleted), std::back_inserter(diff._stripsAdded));
+
+	diffMaps(_routes, other._routes, std::back_inserter(diff._routesDeleted), std::back_inserter(diff._routesAdded));
+
+	return diff;
+}
+void SplineNetwork::applyDiff(const SplineNetwork::Diff &diff) {
+	for (const auto &deletedAnchor : diff._anchorsDeleted) {
+		auto id = deletedAnchor.id();
+		auto anchorIt = _anchors.find(id);
+		if (anchorIt == _anchors.end()) {
+			fmt::print(std::cerr,
+			           "Anchor #{} did not exist in network. Skipping deletion.\n"
+			           "\tThis is likely due to the area previously edited being heavily altered, be very careful.\n",
+			           id);
+		} else {
+			if (deletedAnchor != anchorIt->second) {
+				fmt::print(
+				    std::cerr,
+				    "Anchor #{} data does not match previous version.\n"
+				    "\tThis is not necessarily a problem, some roads may just have been nudged, but be careful.\n",
+				    id);
+			}
+		}
+		_anchors.erase(anchorIt);
+		_anchorCount--;
+	}
+	for (const auto &newAnchor : diff._anchorsAdded) {
+		_anchors.emplace(newAnchor.id(), newAnchor);
+		_anchorCount++;
+	}
+
+	for (const auto &deletedStrip : diff._stripsDeleted) {
+		auto id = deletedStrip.idPair();
+		auto stripIt = _strips.find(id);
+		if (stripIt == _strips.end()) {
+			fmt::print(std::cerr,
+			           "Strip {}->{} did not exist in network. Skipping deletion.\n"
+			           "\tThis is likely due to the area previously edited being heavily altered, be very careful.\n",
+			           id.second, id.first);
+		} else {
+			if (deletedStrip != stripIt->second) {
+				fmt::print(
+				    std::cerr,
+				    "Strip {}->{} data does not match previous version.\n"
+				    "\tThis is not necessarily a problem, some railroads may just have been added, but be careful.\n",
+				    id.second, id.first);
+			}
+		}
+		_strips.erase(stripIt);
+		_stripCount--;
+	}
+	for (const auto &newStrip : diff._stripsAdded) {
+		_strips.emplace(newStrip.idPair(), newStrip);
+		_stripCount++;
+	}
+
+	for (const auto &deletedRoute : diff._routesDeleted) {
+		auto id = deletedRoute.id();
+		auto routeIt = _routes.find(id);
+		if (routeIt == _routes.end()) {
+			fmt::print(std::cerr,
+			           "Route #{} did not exist in network. Skipping deletion.\n"
+			           "\tThis is likely due to the area previously edited being heavily altered, be very careful.\n",
+			           id);
+		} else {
+			if (deletedRoute != routeIt->second) {
+				fmt::print(
+				    std::cerr,
+				    "Route #{} data does not match previous version.\n"
+				    "\tThis is not necessarily a problem, some roads may just have been nudged, but be careful.\n",
+				    id);
+			}
+		}
+		_routes.erase(routeIt);
+		_routeCount--;
+	}
+	for (const auto &newRoute : diff._routesAdded) {
+		_routes.emplace(newRoute.id(), newRoute);
+		_routeCount++;
+	}
+
+	auto tmp = diff._routesAdded;
 }

@@ -18,8 +18,13 @@ int main(int argc, char *argv[]) {
 	SplineNetwork vanillaNetwork(argv[1]);
 	SplineNetwork modNetwork(argv[2]);
 
+	auto diff = vanillaNetwork.calculateDiff(modNetwork);
+	auto diffedNetwork = vanillaNetwork;
+	diffedNetwork.applyDiff(diff);
+
 	vanillaNetwork.writeToFile("./out.splnet");
 	modNetwork.writeToFile("./out2.splnet");
+	diffedNetwork.writeToFile("./out3.splnet");
 
 	return 0;
 }

@@ -15,4 +15,6 @@ public:
 	void writeToFile(SplnetFileWriter &fileWriter, bool isFinal = false) const;
 
 	[[nodiscard]] auto id() const { return _id; }
+
+	bool operator==(const Route &other) const = default;
 };
