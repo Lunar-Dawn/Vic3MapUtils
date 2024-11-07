@@ -117,12 +117,13 @@ void SplineNetwork::applyDiff(const SplineNetwork::Diff &diff) {
 			           "Anchor #{} did not exist in network. Skipping deletion.\n"
 			           "\tThis is likely due to the area previously edited being heavily altered, be very careful.\n",
 			           id);
+			continue;
 		} else {
 			if (deletedAnchor != anchorIt->second) {
 				fmt::print(
 				    std::cerr,
 				    "Anchor #{} data does not match previous version.\n"
-				    "\tThis is not necessarily a problem, some roads may just have been nudged, but be careful.\n",
+				    "\tThis is not necessarily a problem, some nodes may just have been nudged, but be careful.\n",
 				    id);
 			}
 		}
@@ -142,6 +143,7 @@ void SplineNetwork::applyDiff(const SplineNetwork::Diff &diff) {
 			           "Strip {}->{} did not exist in network. Skipping deletion.\n"
 			           "\tThis is likely due to the area previously edited being heavily altered, be very careful.\n",
 			           id.second, id.first);
+			continue;
 		} else {
 			if (deletedStrip != stripIt->second) {
 				fmt::print(
@@ -167,6 +169,7 @@ void SplineNetwork::applyDiff(const SplineNetwork::Diff &diff) {
 			           "Route #{} did not exist in network. Skipping deletion.\n"
 			           "\tThis is likely due to the area previously edited being heavily altered, be very careful.\n",
 			           id);
+			continue;
 		} else {
 			if (deletedRoute != routeIt->second) {
 				fmt::print(
