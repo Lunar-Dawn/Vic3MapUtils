@@ -18,6 +18,8 @@ add_executable(Vic3MapUtils src/main.cpp
 		src/SplineNetwork/Strip.hpp
 		src/SplineNetwork/FileHandler/SplnetFileWriter.cpp
 		src/SplineNetwork/FileHandler/SplnetFileWriter.hpp
+		src/SplineNetwork/Diff.cpp
+		src/SplineNetwork/Diff.hpp
 )
 
 include(FetchContent)

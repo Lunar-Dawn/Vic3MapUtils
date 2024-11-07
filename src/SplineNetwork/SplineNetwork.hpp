@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Anchor.hpp"
+#include "Diff.hpp"
 #include "Route.hpp"
 #include "Strip.hpp"
 
@@ -30,8 +31,8 @@ class SplineNetwork {
 	template <typename T, typename K, std::weakly_incrementable O>
 	void diffMaps(const std::map<K, T> &from, const std::map<K, T> &to, O deletedValues, O newValues) {
 		// Transforms the IDs in the range into the value in the specific map
-		auto fromTransform = std::views::transform([&](auto id) { return from.at(id); });
-		auto toTransform = std::views::transform([&](auto id) { return to.at(id); });
+		auto fromTransform = std::views::transform([&](auto id) { return std::pair(id, from.at(id)); });
+		auto toTransform = std::views::transform([&](auto id) { return std::pair(id, to.at(id)); });
 
 		// All the IDs in both maps
 		std::vector<K> preservedIDs;
@@ -58,20 +59,6 @@ public:
 
 	void writeToFile(const std::filesystem::path &path) const;
 
-	/// A list of changes that can be applied to a Network
-	/// Contains complete versions of everything so we can check that the correct version gets replaced
-	/// Avoids someone moving an anchor that later get reused for something else getting moved somewhere unexpected
-	struct Diff {
-		std::vector<Anchor> _anchorsDeleted;
-		std::vector<Anchor> _anchorsAdded;
-
-		std::vector<Strip> _stripsDeleted;
-		std::vector<Strip> _stripsAdded;
-
-		std::vector<Route> _routesDeleted;
-		std::vector<Route> _routesAdded;
-	};
-
 	/// Calculate the changes to, other
 	/// Usually called on the vanilla network with `other` being the modded network
 	Diff calculateDiff(const SplineNetwork &other);
@@ -79,8 +66,3 @@ public:
 	/// Usually called on the vanilla network
 	void applyDiff(const Diff &diff);
 };
-
-/// Not 100% pleased with using underscored internal ids in the json export
-/// But since they're meant to be ephemeral it's fine to save a lot of boilerplate
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(SplineNetwork::Diff, _anchorsDeleted, _anchorsAdded, _stripsDeleted, _stripsAdded,
-                                   _routesDeleted, _routesAdded);

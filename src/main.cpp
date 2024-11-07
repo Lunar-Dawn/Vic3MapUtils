@@ -6,6 +6,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include "SplineNetwork/Diff.hpp"
 #include "SplineNetwork/SplineNetwork.hpp"
 #include "util.hpp"
 
@@ -114,7 +115,7 @@ void handleApply(const ArgList &arguments) {
 	};
 
 	SplineNetwork network(networkPath);
-	network.applyDiff(json::parse(std::ifstream(diffPath)).get<SplineNetwork::Diff>());
+	network.applyDiff(json::parse(std::ifstream(diffPath)).get<Diff>());
 	network.writeToFile(outputPath);
 }
 

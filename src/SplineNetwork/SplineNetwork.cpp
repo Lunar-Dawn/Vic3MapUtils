@@ -96,21 +96,22 @@ void SplineNetwork::writeToFile(const std::filesystem::path &path) const {
 	};
 }
 
-SplineNetwork::Diff SplineNetwork::calculateDiff(const SplineNetwork &other) {
+Diff SplineNetwork::calculateDiff(const SplineNetwork &other) {
 	Diff diff;
 
-	diffMaps(_anchors, other._anchors, std::back_inserter(diff._anchorsDeleted),
-	         std::back_inserter(diff._anchorsAdded));
+	diffMaps(_anchors, other._anchors, std::inserter(diff._anchorsDeleted, diff._anchorsDeleted.begin()),
+	         std::inserter(diff._anchorsAdded, diff._anchorsAdded.begin()));
 
-	diffMaps(_strips, other._strips, std::back_inserter(diff._stripsDeleted), std::back_inserter(diff._stripsAdded));
+	diffMaps(_strips, other._strips, std::inserter(diff._stripsDeleted, diff._stripsDeleted.begin()),
+	         std::inserter(diff._stripsAdded, diff._stripsAdded.begin()));
 
-	diffMaps(_routes, other._routes, std::back_inserter(diff._routesDeleted), std::back_inserter(diff._routesAdded));
+	diffMaps(_routes, other._routes, std::inserter(diff._routesDeleted, diff._routesDeleted.begin()),
+	         std::inserter(diff._routesAdded, diff._routesAdded.begin()));
 
 	return diff;
 }
-void SplineNetwork::applyDiff(const SplineNetwork::Diff &diff) {
-	for (const auto &deletedAnchor : diff._anchorsDeleted) {
-		auto id = deletedAnchor.id();
+void SplineNetwork::applyDiff(const Diff &diff) {
+	for (const auto &[id, deletedAnchor] : diff._anchorsDeleted) {
 		auto anchorIt = _anchors.find(id);
 		if (anchorIt == _anchors.end()) {
 			fmt::print(std::cerr,
@@ -130,13 +131,10 @@ void SplineNetwork::applyDiff(const SplineNetwork::Diff &diff) {
 		_anchors.erase(anchorIt);
 		_anchorCount--;
 	}
-	for (const auto &newAnchor : diff._anchorsAdded) {
-		_anchors.emplace(newAnchor.id(), newAnchor);
-		_anchorCount++;
-	}
+	_anchors.insert(diff._anchorsAdded.begin(), diff._anchorsAdded.end());
+	_anchorCount -= diff._anchorsAdded.size();
 
-	for (const auto &deletedStrip : diff._stripsDeleted) {
-		auto id = deletedStrip.idPair();
+	for (const auto &[id, deletedStrip] : diff._stripsDeleted) {
 		auto stripIt = _strips.find(id);
 		if (stripIt == _strips.end()) {
 			fmt::print(std::cerr,
@@ -156,13 +154,10 @@ void SplineNetwork::applyDiff(const SplineNetwork::Diff &diff) {
 		_strips.erase(stripIt);
 		_stripCount--;
 	}
-	for (const auto &newStrip : diff._stripsAdded) {
-		_strips.emplace(newStrip.idPair(), newStrip);
-		_stripCount++;
-	}
+	_strips.insert(diff._stripsAdded.begin(), diff._stripsAdded.end());
+	_stripCount -= diff._stripsAdded.size();
 
-	for (const auto &deletedRoute : diff._routesDeleted) {
-		auto id = deletedRoute.id();
+	for (const auto &[id, deletedRoute] : diff._routesDeleted) {
 		auto routeIt = _routes.find(id);
 		if (routeIt == _routes.end()) {
 			fmt::print(std::cerr,
@@ -182,10 +177,6 @@ void SplineNetwork::applyDiff(const SplineNetwork::Diff &diff) {
 		_routes.erase(routeIt);
 		_routeCount--;
 	}
-	for (const auto &newRoute : diff._routesAdded) {
-		_routes.emplace(newRoute.id(), newRoute);
-		_routeCount++;
-	}
-
-	auto tmp = diff._routesAdded;
+	_routes.insert(diff._routesAdded.begin(), diff._routesAdded.end());
+	_routeCount -= diff._routesAdded.size();
 }
