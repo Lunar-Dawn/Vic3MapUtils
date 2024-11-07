@@ -40,6 +40,6 @@ target_link_libraries(Vic3MapUtils PRIVATE nlohmann_json::nlohmann_json)
 if (MSVC)
 	target_compile_options(Vic3MapUtils PRIVATE /W4 /WX)
 else ()
-	target_compile_options(Vic3MapUtils PRIVATE -Wall -Wextra -Wpedantic -Werror)
+	target_compile_options(Vic3MapUtils PRIVATE -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter)
 endif ()
 

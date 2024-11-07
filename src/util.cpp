@@ -1,13 +1,15 @@
 #include <iostream>
 
-#include <fmt/format.h>
+#include <fmt/ostream.h>
 
 #include "util.hpp"
 
-bool checkFileExists(const std::filesystem::path &path) {
-	if (std::filesystem::exists(path))
+namespace fs = std::filesystem;
+
+bool checkFileExists(const fs::path &path) {
+	if (exists(path))
 		return true;
 
-	std::cerr << fmt::format("File \"{}\" not found, aborting\n", path.string());
+	fmt::print(std::cerr, "{}: File not found\n", path.string());
 	return false;
 }
