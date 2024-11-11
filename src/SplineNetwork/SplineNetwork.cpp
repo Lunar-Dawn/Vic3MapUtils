@@ -4,7 +4,6 @@
 #include <iostream>
 
 #include <fmt/format.h>
-#include <fmt/ostream.h>
 
 #include "FileHandler/SplnetFileReader.hpp"
 #include "FileHandler/SplnetFileWriter.hpp"
@@ -14,12 +13,15 @@ SplineNetwork::SplineNetwork(const std::filesystem::path &path) {
 
 	SplnetFileReader fileReader(path);
 
-	parseFileHeader(fileReader);
-	parseAnchorList(fileReader);
-	parseRouteList(fileReader);
-	parseStripList(fileReader);
+	auto [anchorCount, routeCount, stripCount] = parseFileHeader(fileReader);
+	if (anchorCount)
+		parseAnchorList(fileReader, anchorCount);
+	if (routeCount)
+		parseRouteList(fileReader, routeCount);
+	if (stripCount)
+		parseStripList(fileReader, stripCount);
 }
-void SplineNetwork::parseFileHeader(SplnetFileReader &fileReader) {
+std::tuple<uint32_t, uint32_t, uint32_t> SplineNetwork::parseFileHeader(SplnetFileReader &fileReader) {
 	fileReader.expect<uint16_t>(0x00ee);
 	fileReader.expect<uint16_t>(0x0001);
 	fileReader.expect<uint16_t>(0x000c);
@@ -29,34 +31,36 @@ void SplineNetwork::parseFileHeader(SplnetFileReader &fileReader) {
 	fileReader.expect<uint16_t>(0x0001);
 	fileReader.expect<uint16_t>(0x0003);
 	fileReader.expect<uint16_t>(0x000c);
-	_anchorCount = fileReader.read<uint32_t>();
+	auto anchorCount = fileReader.read<uint32_t>();
 	fileReader.expect<uint16_t>(0x000c);
-	_routeCount = fileReader.read<uint32_t>();
+	auto routeCount = fileReader.read<uint32_t>();
 	fileReader.expect<uint16_t>(0x000c);
-	_stripCount = fileReader.read<uint32_t>();
+	auto stripCount = fileReader.read<uint32_t>();
 	fileReader.expect<uint16_t>(0x0004);
+
+	return {anchorCount, routeCount, stripCount};
 }
-void SplineNetwork::parseAnchorList(SplnetFileReader &fileReader) {
+void SplineNetwork::parseAnchorList(SplnetFileReader &fileReader, uint32_t count) {
 	fileReader.expectSectionHeader(0x05f4);
 
-	for (uint32_t i = 0; i < _anchorCount; ++i) {
-		Anchor anchor(fileReader, i == _anchorCount - 1);
+	for (uint32_t i = 0; i < count; ++i) {
+		Anchor anchor(fileReader, i == count - 1);
 		_anchors.emplace(anchor.id(), anchor);
 	}
 }
-void SplineNetwork::parseRouteList(SplnetFileReader &fileReader) {
+void SplineNetwork::parseRouteList(SplnetFileReader &fileReader, uint32_t count) {
 	fileReader.expectSectionHeader(0x05f5);
 
-	for (uint32_t i = 0; i < _routeCount; ++i) {
-		Route route(fileReader, i == _routeCount - 1);
+	for (uint32_t i = 0; i < count; ++i) {
+		Route route(fileReader, i == count - 1);
 		_routes.emplace(route.id(), std::move(route));
 	}
 }
-void SplineNetwork::parseStripList(SplnetFileReader &fileReader) {
+void SplineNetwork::parseStripList(SplnetFileReader &fileReader, uint32_t count) {
 	fileReader.expectSectionHeader(0x05f6);
 
-	for (uint32_t i = 0; i < _stripCount; ++i) {
-		Strip strip(fileReader, i == _stripCount - 1);
+	for (uint32_t i = 0; i < count; ++i) {
+		Strip strip(fileReader, i == count - 1);
 		_strips.emplace(strip.idPair(), strip);
 	}
 }
@@ -73,11 +77,11 @@ void SplineNetwork::writeToFile(const std::filesystem::path &path) const {
 	fileWriter.write<uint16_t>(0x0001);
 	fileWriter.write<uint16_t>(0x0003);
 	fileWriter.write<uint16_t>(0x000c);
-	fileWriter.write<uint32_t>(_anchorCount);
+	fileWriter.write<uint32_t>(_anchors.size());
 	fileWriter.write<uint16_t>(0x000c);
-	fileWriter.write<uint32_t>(_routeCount);
+	fileWriter.write<uint32_t>(_routes.size());
 	fileWriter.write<uint16_t>(0x000c);
-	fileWriter.write<uint32_t>(_stripCount);
+	fileWriter.write<uint32_t>(_strips.size());
 	fileWriter.write<uint16_t>(0x0004);
 
 	fileWriter.writeSectionHeader(0x05f4);
@@ -99,84 +103,14 @@ void SplineNetwork::writeToFile(const std::filesystem::path &path) const {
 Diff SplineNetwork::calculateDiff(const SplineNetwork &other) {
 	Diff diff;
 
-	diffMaps(_anchors, other._anchors, std::inserter(diff._anchorsDeleted, diff._anchorsDeleted.begin()),
-	         std::inserter(diff._anchorsAdded, diff._anchorsAdded.begin()));
-
-	diffMaps(_strips, other._strips, std::inserter(diff._stripsDeleted, diff._stripsDeleted.begin()),
-	         std::inserter(diff._stripsAdded, diff._stripsAdded.begin()));
-
-	diffMaps(_routes, other._routes, std::inserter(diff._routesDeleted, diff._routesDeleted.begin()),
-	         std::inserter(diff._routesAdded, diff._routesAdded.begin()));
+	diff.anchorChanges.diffMaps(_anchors, other._anchors);
+	diff.stripChanges.diffMaps(_strips, other._strips);
+	diff.routeChanges.diffMaps(_routes, other._routes);
 
 	return diff;
 }
 void SplineNetwork::applyDiff(const Diff &diff) {
-	for (const auto &[id, deletedAnchor] : diff._anchorsDeleted) {
-		auto anchorIt = _anchors.find(id);
-		if (anchorIt == _anchors.end()) {
-			fmt::print(std::cerr,
-			           "Anchor #{} did not exist in network. Skipping deletion.\n"
-			           "\tThis is likely due to the area previously edited being heavily altered, be very careful.\n",
-			           id);
-			continue;
-		} else {
-			if (deletedAnchor != anchorIt->second) {
-				fmt::print(
-				    std::cerr,
-				    "Anchor #{} data does not match previous version.\n"
-				    "\tThis is not necessarily a problem, some nodes may just have been nudged, but be careful.\n",
-				    id);
-			}
-		}
-		_anchors.erase(anchorIt);
-		_anchorCount--;
-	}
-	_anchors.insert(diff._anchorsAdded.begin(), diff._anchorsAdded.end());
-	_anchorCount -= diff._anchorsAdded.size();
-
-	for (const auto &[id, deletedStrip] : diff._stripsDeleted) {
-		auto stripIt = _strips.find(id);
-		if (stripIt == _strips.end()) {
-			fmt::print(std::cerr,
-			           "Strip {}->{} did not exist in network. Skipping deletion.\n"
-			           "\tThis is likely due to the area previously edited being heavily altered, be very careful.\n",
-			           id.second, id.first);
-			continue;
-		} else {
-			if (deletedStrip != stripIt->second) {
-				fmt::print(
-				    std::cerr,
-				    "Strip {}->{} data does not match previous version.\n"
-				    "\tThis is not necessarily a problem, some railroads may just have been added, but be careful.\n",
-				    id.second, id.first);
-			}
-		}
-		_strips.erase(stripIt);
-		_stripCount--;
-	}
-	_strips.insert(diff._stripsAdded.begin(), diff._stripsAdded.end());
-	_stripCount -= diff._stripsAdded.size();
-
-	for (const auto &[id, deletedRoute] : diff._routesDeleted) {
-		auto routeIt = _routes.find(id);
-		if (routeIt == _routes.end()) {
-			fmt::print(std::cerr,
-			           "Route #{} did not exist in network. Skipping deletion.\n"
-			           "\tThis is likely due to the area previously edited being heavily altered, be very careful.\n",
-			           id);
-			continue;
-		} else {
-			if (deletedRoute != routeIt->second) {
-				fmt::print(
-				    std::cerr,
-				    "Route #{} data does not match previous version.\n"
-				    "\tThis is not necessarily a problem, some roads may just have been nudged, but be careful.\n",
-				    id);
-			}
-		}
-		_routes.erase(routeIt);
-		_routeCount--;
-	}
-	_routes.insert(diff._routesAdded.begin(), diff._routesAdded.end());
-	_routeCount -= diff._routesAdded.size();
+	applyChangeList(_anchors, diff.anchorChanges);
+	applyChangeList(_strips, diff.stripChanges);
+	applyChangeList(_routes, diff.routeChanges);
 }

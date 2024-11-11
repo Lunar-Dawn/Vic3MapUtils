@@ -51,3 +51,9 @@ public:
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Strip, _sourceID, _destinationID, _routeIDs);
 };
+
+template <> struct fmt::formatter<Strip> : formatter<string_view> {
+	format_context::iterator format(const Strip &a, format_context &ctx) const {
+		return format_to(ctx.out(), "Strip {}->{}", a.sourceID(), a.destinationID());
+	}
+};

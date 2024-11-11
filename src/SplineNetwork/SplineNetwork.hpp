@@ -9,50 +9,21 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <map>
 #include <ranges>
 
-class SplineNetwork {
-	uint32_t _anchorCount = 0;
-	uint32_t _routeCount = 0;
-	uint32_t _stripCount = 0;
+#include <fmt/ostream.h>
 
+class SplineNetwork {
 	std::map<uint32_t, Anchor> _anchors;
 	std::map<uint32_t, Route> _routes;
 	std::map<std::pair<uint32_t, uint32_t>, Strip> _strips;
 
-	void parseFileHeader(SplnetFileReader &fileReader);
-	void parseAnchorList(SplnetFileReader &fileReader);
-	void parseRouteList(SplnetFileReader &fileReader);
-	void parseStripList(SplnetFileReader &fileReader);
-
-	/// Calculate the differences (changed, added and removed values) between `from` and `to`
-	/// and insert them into two different arrays
-	template <typename T, typename K, std::weakly_incrementable O>
-	void diffMaps(const std::map<K, T> &from, const std::map<K, T> &to, O deletedValues, O newValues) {
-		// Transforms the IDs in the range into the value in the specific map
-		auto fromTransform = std::views::transform([&](auto id) { return std::pair(id, from.at(id)); });
-		auto toTransform = std::views::transform([&](auto id) { return std::pair(id, to.at(id)); });
-
-		// All the IDs in both maps
-		std::vector<K> preservedIDs;
-		std::ranges::set_intersection(std::views::keys(from), std::views::keys(to), std::back_inserter(preservedIDs));
-		// Only record if anything has changed
-		auto changedElements =
-		    preservedIDs | std::views::filter([&](const auto id) { return from.at(id) != to.at(id); });
-		std::ranges::copy(changedElements | fromTransform, deletedValues);
-		std::ranges::copy(changedElements | toTransform, newValues);
-
-		// All the IDs only in the `from` map
-		std::vector<K> deletedIDs;
-		std::ranges::set_difference(std::views::keys(from), std::views::keys(to), std::back_inserter(deletedIDs));
-		std::ranges::copy(deletedIDs | fromTransform, deletedValues);
-
-		// All the IDs only in the `to` map
-		std::vector<K> newIDs;
-		std::ranges::set_difference(std::views::keys(to), std::views::keys(from), std::back_inserter(newIDs));
-		std::ranges::copy(newIDs | toTransform, newValues);
-	}
+	static std::tuple<uint32_t, uint32_t, uint32_t> parseFileHeader(SplnetFileReader &fileReader);
+	void parseAnchorList(SplnetFileReader &fileReader, uint32_t count);
+	void parseRouteList(SplnetFileReader &fileReader, uint32_t count);
+	void parseStripList(SplnetFileReader &fileReader, uint32_t count);
 
 public:
 	explicit SplineNetwork(const std::filesystem::path &path);
@@ -65,4 +36,61 @@ public:
 	/// Apply the changes to this network
 	/// Usually called on the vanilla network
 	void applyDiff(const Diff &diff);
+	template <typename K, typename T>
+	void applyChangeList(std::map<K, T> &items, const NetworkItemChanges<K, T> &changes) {
+		for (const auto &[id, versionPair] : changes.edits) {
+			const auto &[oldVersion, newVersion] = versionPair;
+			auto it = items.find(id);
+			if (it == items.end()) {
+				fmt::print(
+				    std::cerr,
+				    "{} did not exist in network. New version will still be inserted, but take care.\n"
+				    "\tThis is likely due to the area previously edited being heavily altered, be very careful.\n",
+				    oldVersion);
+			} else {
+				if (oldVersion != it->second) {
+					fmt::print(std::cerr,
+					           "{} data does not match previous version.\n"
+					           "\tThis is not necessarily a problem, some nodes may just have been nudged, but be "
+					           "careful.\n",
+					           oldVersion);
+				}
+			}
+			items[id] = newVersion;
+		}
+
+		for (const auto &[id, deletedItem] : changes.deletions) {
+			auto it = items.find(id);
+			if (it == items.end()) {
+				fmt::print(
+				    std::cerr,
+				    "{} did not exist in network. Skipping deletion.\n"
+				    "\tThis is likely due to the area previously edited being heavily altered, be very careful.\n",
+				    deletedItem);
+				continue;
+			} else {
+				if (deletedItem != it->second) {
+					fmt::print(std::cerr,
+					           "{} data does not match previous version.\n"
+					           "\tThis is not necessarily a problem, some nodes may just have been nudged, but be "
+					           "careful.\n",
+					           deletedItem);
+				}
+			}
+			items.erase(it);
+		}
+		for (const auto &[id, newItem] : changes.additions) {
+			// TODO: handle reindexing sub-anchors and routes so this isn't a problem
+			//  Likely as a part of making the entire network not just a list of indices
+			//  but a real graph
+			if (items.contains(id)) {
+				fmt::print(std::cerr,
+				           "{} already exists in the network.\n"
+				           "Insertion could be extremely dangerous, aborting.\n",
+				           newItem);
+				throw std::runtime_error("Attempting to insert item with existing id, aborting to maintain coherence.");
+			}
+			items[id] = newItem;
+		}
+	}
 };

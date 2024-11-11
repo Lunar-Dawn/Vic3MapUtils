@@ -31,3 +31,9 @@ public:
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Anchor, _id, _posX, _posY);
 };
+
+template <> struct fmt::formatter<Anchor> : formatter<string_view> {
+	format_context::iterator format(const Anchor &a, format_context &ctx) const {
+		return format_to(ctx.out(), "Anchor #{}", a.niceID());
+	}
+};

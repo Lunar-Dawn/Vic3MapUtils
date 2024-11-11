@@ -23,3 +23,9 @@ public:
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE(Route, _id, _anchors);
 };
+
+template <> struct fmt::formatter<Route> : formatter<string_view> {
+	format_context::iterator format(const Route &a, format_context &ctx) const {
+		return format_to(ctx.out(), "Route #{}", a.id());
+	}
+};
