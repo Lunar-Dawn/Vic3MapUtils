@@ -8,7 +8,9 @@
 #include <nlohmann/json.hpp>
 
 class Route {
-	uint64_t _id;
+	// Seems to be a 24-bit incremental ID, and an 8-bit type
+	// How does this type interact with multi-route Strips? No idea.
+	uint32_t _id;
 	std::vector<uint32_t> _anchors;
 
 public:

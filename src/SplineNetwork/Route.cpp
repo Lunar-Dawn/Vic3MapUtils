@@ -3,7 +3,8 @@ Route::Route(SplnetFileReader &fileReader, bool isFinal) {
 	fileReader.expectElementHeader();
 
 	fileReader.expect<uint16_t>(0x029c);
-	_id = fileReader.read<uint64_t>();
+	_id = fileReader.read<uint32_t>();
+	fileReader.expect<uint32_t>(0x00);
 	fileReader.expect<uint16_t>(0x05f7);
 	fileReader.expect<uint16_t>(0x0001);
 	fileReader.expect<uint16_t>(0x0003);
@@ -19,6 +20,7 @@ void Route::writeToFile(SplnetFileWriter &fileWriter, bool isFinal) const {
 	fileWriter.writeElementHeader();
 	fileWriter.write<uint16_t>(0x029c);
 	fileWriter.write(_id);
+	fileWriter.write<uint32_t>(0x00);
 	fileWriter.write<uint16_t>(0x05f7);
 	fileWriter.write<uint16_t>(0x0001);
 	fileWriter.write<uint16_t>(0x0003);
