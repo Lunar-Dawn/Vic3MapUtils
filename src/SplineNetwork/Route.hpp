@@ -20,6 +20,9 @@ public:
 	void writeToFile(SplnetFileWriter &fileWriter, bool isFinal = false) const;
 
 	[[nodiscard]] auto id() const { return _id; }
+	void id(uint32_t set) { _id = set; }
+
+	void remapAnchors(const std::map<uint32_t, uint32_t> &map);
 
 	bool operator==(const Route &other) const = default;
 

@@ -37,3 +37,8 @@ void Strip::writeToFile(SplnetFileWriter &fileWriter, bool isFinal) const {
 
 	fileWriter.writeElementFooter(isFinal);
 }
+void Strip::remapRoutes(const std::map<uint32_t, uint32_t> &map) {
+	for (auto &routeID : _routeIDs) {
+		routeID = map.at(routeID);
+	}
+}

@@ -13,3 +13,15 @@ bool checkFileExists(const fs::path &path) {
 	fmt::print(std::cerr, "{}: File not found\n", path.string());
 	return false;
 }
+bool checkFilesExist(std::span<std::filesystem::path> files) {
+	bool allFound = true;
+
+	for (const auto &path : files) {
+		if (checkFileExists(path))
+			continue;
+
+		allFound = false;
+	}
+
+	return allFound;
+}

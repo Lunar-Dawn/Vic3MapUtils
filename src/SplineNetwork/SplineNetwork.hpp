@@ -26,6 +26,7 @@ class SplineNetwork {
 	void parseStripList(SplnetFileReader &fileReader, uint32_t count);
 
 public:
+	SplineNetwork() = default;
 	explicit SplineNetwork(const std::filesystem::path &path);
 
 	void writeToFile(const std::filesystem::path &path) const;

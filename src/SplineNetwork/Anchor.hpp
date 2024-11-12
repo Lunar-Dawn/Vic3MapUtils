@@ -22,6 +22,7 @@ public:
 	void writeToFile(SplnetFileWriter &fileWriter, bool isFinal = false) const;
 
 	[[nodiscard]] auto id() const { return _id; }
+	void id(uint32_t set) { _id = set; }
 	[[nodiscard]] bool isSubAnchor() const { return _id & (1 << 28); }
 	[[nodiscard]] bool isWaterAnchor() const { return _id & (1 << 23); }
 	/// The id without the signaling bits, as entered in the editor

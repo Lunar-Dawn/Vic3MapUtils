@@ -34,9 +34,54 @@ void printUsage(const ArgList &arguments) {
 	       "        The diff will be saved as diff.json unless output is specified.\n"
 	       "    apply [-o <file>] networkFile diff\n"
 	       "        Applies the network diff to the splnet file (usually vanilla's).\n"
-	       "        The edited network will override the original unless output is specified.\n";
+	       "        The edited network will override the original unless output is specified.\n"
+	       "    full-merge [-o <file>] <networkFile> <networkFile>...\n"
+	       "        Merge two or more networks into one, containing all the anchors, strips, and routes.\n"
+	       "        This will reindex Sub-Anchors and Route IDs, "
+	       "but it will refuse to merge if any duplicate hub anchors exist, "
+	       "these will be printed for you to delete/merge manually.\n"
+	       "        The merged network will be saved as merged.splnet unless output is specified.\n";
 }
 
+void handleApply(const ArgList &arguments) {
+	if (arguments.size() < 4 || arguments.size() > 6) {
+		printUsage(arguments);
+		std::exit(1);
+	}
+
+	fs::path networkPath;
+	fs::path diffPath;
+	fs::path outputPath;
+
+	auto it = arguments.begin() + 2;
+
+	if (*it == "-o" || *it == "--output") {
+		it++;
+		outputPath = *it++;
+	} else {
+		outputPath = "diff.json";
+	}
+
+	if (it == arguments.end()) {
+		printUsage(arguments);
+		std::exit(1);
+	}
+	networkPath = *it++;
+
+	if (it == arguments.end()) {
+		printUsage(arguments);
+		std::exit(1);
+	}
+	diffPath = *it++;
+
+	if (!checkFilesExist(networkPath, diffPath)) {
+		std::exit(1);
+	};
+
+	SplineNetwork network(networkPath);
+	network.applyDiff(json::parse(std::ifstream(diffPath)).get<Diff>());
+	network.writeToFile(outputPath);
+}
 void handleGenerate(const ArgList &arguments) {
 	if (arguments.size() < 4 || arguments.size() > 6) {
 		printUsage(arguments);
@@ -79,14 +124,13 @@ void handleGenerate(const ArgList &arguments) {
 	std::ofstream outputFile(outputPath);
 	outputFile << jsonFile.dump(4) << '\n';
 }
-void handleApply(const ArgList &arguments) {
-	if (arguments.size() < 4 || arguments.size() > 6) {
+void handleFullMerge(const ArgList &arguments) {
+	if (arguments.size() < 4) {
 		printUsage(arguments);
 		std::exit(1);
 	}
 
-	fs::path networkPath;
-	fs::path diffPath;
+	std::vector<fs::path> networkFiles;
 	fs::path outputPath;
 
 	auto it = arguments.begin() + 2;
@@ -94,29 +138,33 @@ void handleApply(const ArgList &arguments) {
 	if (*it == "-o" || *it == "--output") {
 		it++;
 		outputPath = *it++;
+		networkFiles.reserve(arguments.size() - 4);
 	} else {
-		outputPath = "diff.json";
+		outputPath = "merged.splnet";
+		networkFiles.reserve(arguments.size() - 2);
 	}
 
-	if (it == arguments.end()) {
+	std::copy(it, arguments.end(), std::back_inserter(networkFiles));
+
+	if (networkFiles.size() < 2) {
+		std::cerr << "Please provide at least 2 network files to merge.\n";
 		printUsage(arguments);
 		std::exit(1);
 	}
-	networkPath = *it++;
 
-	if (it == arguments.end()) {
-		printUsage(arguments);
+	if (!checkFilesExist(networkFiles)) {
 		std::exit(1);
 	}
-	diffPath = *it++;
 
-	if (!checkFilesExist(networkPath, diffPath)) {
-		std::exit(1);
-	};
+	SplineNetwork emptyNetwork;
+	Diff mergedDiff;
+	for (const auto &path : networkFiles) {
+		SplineNetwork toMerge(path);
+		mergedDiff.mergeDiff(emptyNetwork.calculateDiff(toMerge));
+	}
 
-	SplineNetwork network(networkPath);
-	network.applyDiff(json::parse(std::ifstream(diffPath)).get<Diff>());
-	network.writeToFile(outputPath);
+	emptyNetwork.applyDiff(mergedDiff);
+	emptyNetwork.writeToFile(outputPath);
 }
 
 int main(int argc, char *argv[]) {
@@ -138,6 +186,10 @@ int main(int argc, char *argv[]) {
 	}
 	if (command == "apply") {
 		handleApply(arguments);
+		return 0;
+	}
+	if (command == "full-merge") {
+		handleFullMerge(arguments);
 		return 0;
 	}
 

@@ -17,5 +17,9 @@ struct Diff {
 	NetworkItemChanges<uint32_t, Anchor> anchorChanges;
 	NetworkItemChanges<std::pair<uint32_t, uint32_t>, Strip> stripChanges;
 	NetworkItemChanges<uint32_t, Route> routeChanges;
+
+	/// Merge another diff into this one, will reindex sub-anchors and routes in other
+	/// Will print warnings and throw if multiple hub anchors with the same ID are present
+	void mergeDiff(const Diff &other);
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Diff, anchorChanges, stripChanges, routeChanges);

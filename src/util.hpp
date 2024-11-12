@@ -4,7 +4,9 @@
 #include <ranges>
 
 bool checkFileExists(const std::filesystem::path &path);
-template <typename... Args> bool checkFilesExist(const Args &...files) {
+template <typename... Args>
+    requires(... && std::is_constructible_v<Args, std::filesystem::path>)
+bool checkFilesExist(const Args &...files) {
 	bool allFound = true;
 	for (const auto &f : {files...}) {
 		if (checkFileExists(f))
@@ -14,3 +16,4 @@ template <typename... Args> bool checkFilesExist(const Args &...files) {
 	}
 	return allFound;
 }
+bool checkFilesExist(std::span<std::filesystem::path> files);
