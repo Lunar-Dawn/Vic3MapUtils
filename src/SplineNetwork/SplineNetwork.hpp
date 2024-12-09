@@ -36,7 +36,8 @@ public:
 	Diff calculateDiff(const SplineNetwork &other);
 	/// Apply the changes to this network
 	/// Usually called on the vanilla network
-	void applyDiff(const Diff &diff);
+	void applyDiff(Diff diff);
+
 	template <typename K, typename T>
 	void applyChangeList(std::map<K, T> &items, const NetworkItemChanges<K, T> &changes) {
 		for (const auto &[id, versionPair] : changes.edits) {
@@ -81,9 +82,7 @@ public:
 			items.erase(it);
 		}
 		for (const auto &[id, newItem] : changes.additions) {
-			// TODO: handle reindexing sub-anchors and routes so this isn't a problem
-			//  Likely as a part of making the entire network not just a list of indices
-			//  but a real graph
+			// The remapping should make this never happen, but for safety's sake this is here
 			if (items.contains(id)) {
 				fmt::print(std::cerr,
 				           "{} already exists in the network.\n"

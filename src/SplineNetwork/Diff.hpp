@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <set>
 #include <utility>
 
 #include <nlohmann/json.hpp>
@@ -20,6 +21,9 @@ struct Diff {
 
 	/// Merge another diff into this one, will reindex sub-anchors and routes in other
 	/// Will print warnings and throw if multiple hub anchors with the same ID are present
-	void mergeDiff(const Diff &other);
+	void mergeDiff(Diff other);
+
+	/// Remap subanchors and routes with respect to the provided reserved ids
+	void remapCollisions(std::set<uint32_t> anchorIds, std::set<uint32_t> routeIds);
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Diff, anchorChanges, stripChanges, routeChanges);

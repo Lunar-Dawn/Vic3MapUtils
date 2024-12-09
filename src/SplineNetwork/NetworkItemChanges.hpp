@@ -40,6 +40,18 @@ template <typename K, typename T> struct NetworkItemChanges {
 		std::ranges::set_difference(std::views::keys(to), std::views::keys(from), std::back_inserter(newIDs));
 		std::ranges::copy(newIDs | toTransform, std::inserter(additions, additions.end()));
 	}
+
+	/// Merges other into this
+	/// Will (silently) prefer this over other
+	void merge(NetworkItemChanges &other) {
+		// TODO: Sanity check edits and deletions,
+		//  so nothing gets overwritten silently,
+		//  or deletes something in a previous diff
+
+		deletions.merge(other.deletions);
+		additions.merge(other.additions);
+		edits.merge(other.edits);
+	}
 };
 template <typename K, typename T> void to_json(nlohmann::json &json, const NetworkItemChanges<K, T> &changeList) {
 	json["deletions"] = changeList.deletions;

@@ -35,6 +35,7 @@ void Route::writeToFile(SplnetFileWriter &fileWriter, bool isFinal) const {
 
 void Route::remapAnchors(const std::map<uint32_t, uint32_t> &map) {
 	for (auto &anchor : _anchors) {
-		anchor = map.at(anchor);
+		if (map.contains(anchor))
+			anchor = map.at(anchor);
 	}
 }

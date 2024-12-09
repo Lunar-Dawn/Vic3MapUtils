@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <iostream>
+#include <set>
 
 #include <fmt/format.h>
 
@@ -109,7 +110,18 @@ Diff SplineNetwork::calculateDiff(const SplineNetwork &other) {
 
 	return diff;
 }
-void SplineNetwork::applyDiff(const Diff &diff) {
+
+void SplineNetwork::applyDiff(Diff diff) {
+	std::set<uint32_t> reservedAnchorIds;
+	std::set<uint32_t> reservedRouteIds;
+	for (const auto &id : _anchors | std::views::keys) {
+		reservedAnchorIds.emplace(id);
+	}
+	for (const auto &id : _routes | std::views::keys) {
+		reservedRouteIds.emplace(id);
+	}
+	diff.remapCollisions(reservedAnchorIds, reservedRouteIds);
+
 	applyChangeList(_anchors, diff.anchorChanges);
 	applyChangeList(_strips, diff.stripChanges);
 	applyChangeList(_routes, diff.routeChanges);
