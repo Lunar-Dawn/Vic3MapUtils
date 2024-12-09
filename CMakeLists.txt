@@ -47,3 +47,6 @@ else ()
 	target_compile_options(Vic3MapUtils PRIVATE -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter)
 endif ()
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+	target_link_libraries(Vic3MapUtils PUBLIC -static)
+endif ()
