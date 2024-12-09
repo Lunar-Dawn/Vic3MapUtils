@@ -35,6 +35,13 @@ void printUsage(const ArgList &arguments) {
 	       "    apply [-o <file>] networkFile diff\n"
 	       "        Applies the network diff to the splnet file (usually vanilla's).\n"
 	       "        The edited network will override the original unless output is specified.\n"
+	       "    merge [-o <file>] <baseNetworkFile> <editedNetwork>...\n"
+	       "        Merge the changes made in the edited networks as compared to the base network. "
+	       "Useful for git-style merge conflict resolution.\n"
+	       "        This will reindex Sub-Anchors and Route IDs, "
+	       "but it will refuse to merge if any duplicate hub anchors exist, "
+	       "these will be printed for you to delete/merge manually.\n"
+	       "        The merged network will be saved as merged.splnet unless output is specified.\n"
 	       "    full-merge [-o <file>] <networkFile> <networkFile>...\n"
 	       "        Merge two or more networks into one, containing all the anchors, strips, and routes.\n"
 	       "        This will reindex Sub-Anchors and Route IDs, "
@@ -166,6 +173,53 @@ void handleFullMerge(const ArgList &arguments) {
 	emptyNetwork.applyDiff(mergedDiff);
 	emptyNetwork.writeToFile(outputPath);
 }
+void handleMerge(const ArgList &arguments) {
+	if (arguments.size() < 5) {
+		printUsage(arguments);
+		std::exit(1);
+	}
+
+	fs::path basePath;
+	std::vector<fs::path> networkFiles;
+	fs::path outputPath;
+
+	auto it = arguments.begin() + 2;
+
+	if (*it == "-o" || *it == "--output") {
+		it++;
+		outputPath = *it++;
+		networkFiles.reserve(arguments.size() - 4);
+	} else {
+		outputPath = "merged.splnet";
+		networkFiles.reserve(arguments.size() - 2);
+	}
+
+	basePath = *it++;
+	std::copy(it, arguments.end(), std::back_inserter(networkFiles));
+
+	if (networkFiles.size() < 2) {
+		std::cerr << "Please provide at least 2 network files to merge.\n";
+		printUsage(arguments);
+		std::exit(1);
+	}
+
+	if (!checkFileExists(basePath)) {
+		std::exit(1);
+	}
+	if (!checkFilesExist(networkFiles)) {
+		std::exit(1);
+	}
+
+	SplineNetwork baseNetwork(basePath);
+	Diff mergedDiff;
+	for (const auto &path : networkFiles) {
+		SplineNetwork toMerge(path);
+		mergedDiff.mergeDiff(baseNetwork.calculateDiff(toMerge));
+	}
+
+	baseNetwork.applyDiff(mergedDiff);
+	baseNetwork.writeToFile(outputPath);
+}
 
 int main(int argc, char *argv[]) {
 	ArgList arguments(argv, argv + argc);
@@ -190,6 +244,10 @@ int main(int argc, char *argv[]) {
 	}
 	if (command == "full-merge") {
 		handleFullMerge(arguments);
+		return 0;
+	}
+	if (command == "merge") {
+		handleMerge(arguments);
 		return 0;
 	}
 
