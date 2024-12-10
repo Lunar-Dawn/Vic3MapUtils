@@ -1,7 +1,6 @@
 #include "SplineNetwork.hpp"
 
 #include <filesystem>
-#include <iostream>
 #include <set>
 
 #include <fmt/format.h>
@@ -78,30 +77,30 @@ void SplineNetwork::writeToFile(const std::filesystem::path &path) const {
 	fileWriter.write<uint16_t>(0x0001);
 	fileWriter.write<uint16_t>(0x0003);
 	fileWriter.write<uint16_t>(0x000c);
-	fileWriter.write<uint32_t>(_anchors.size());
+	fileWriter.write<uint32_t>(static_cast<uint32_t>(_anchors.size()));
 	fileWriter.write<uint16_t>(0x000c);
-	fileWriter.write<uint32_t>(_routes.size());
+	fileWriter.write<uint32_t>(static_cast<uint32_t>(_routes.size()));
 	fileWriter.write<uint16_t>(0x000c);
-	fileWriter.write<uint32_t>(_strips.size());
+	fileWriter.write<uint32_t>(static_cast<uint32_t>(_strips.size()));
 	fileWriter.write<uint16_t>(0x0004);
 
 	fileWriter.writeSectionHeader(0x05f4);
 	for (auto it = _anchors.cbegin(); it != _anchors.cend(); ++it) {
 		it->second.writeToFile(fileWriter, it == std::prev(_anchors.cend()));
-	};
+	}
 
 	fileWriter.writeSectionHeader(0x05f5);
 	for (auto it = _routes.cbegin(); it != _routes.cend(); ++it) {
 		it->second.writeToFile(fileWriter, it == std::prev(_routes.cend()));
-	};
+	}
 
 	fileWriter.writeSectionHeader(0x05f6);
 	for (auto it = _strips.cbegin(); it != _strips.cend(); ++it) {
 		it->second.writeToFile(fileWriter, it == std::prev(_strips.cend()));
-	};
+	}
 }
 
-Diff SplineNetwork::calculateDiff(const SplineNetwork &other) {
+Diff SplineNetwork::calculateDiff(const SplineNetwork &other) const {
 	Diff diff;
 
 	diff.anchorChanges.diffMaps(_anchors, other._anchors);

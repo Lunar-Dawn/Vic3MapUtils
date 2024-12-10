@@ -33,7 +33,7 @@ public:
 	}
 	/// Call read() with type T and then back up again, ensuring the same value gets read if called again
 	template <typename T> T peek() {
-		auto startPos = _file.tellg();
+		const auto startPos = _file.tellg();
 		T ret = read<T>();
 		_readPos -= sizeof(T);
 		_file.seekg(startPos);

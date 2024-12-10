@@ -34,7 +34,7 @@ public:
 };
 
 template <> struct fmt::formatter<Anchor> : formatter<string_view> {
-	format_context::iterator format(const Anchor &a, format_context &ctx) const {
+	static format_context::iterator format(const Anchor &a, format_context &ctx) {
 		return format_to(ctx.out(), "{}{} #{}", a.isSubAnchor() ? "Sub-Anchor" : "Anchor",
 		                 a.isWaterAnchor() ? "(Water)" : "", a.niceID());
 	}

@@ -45,7 +45,8 @@ FetchContent_MakeAvailable(json)
 target_link_libraries(Vic3MapUtils PRIVATE nlohmann_json::nlohmann_json)
 
 if (MSVC)
-	target_compile_options(Vic3MapUtils PRIVATE /W4 /WX)
+	# I don't have easy access to MSVC, so /WX is disabled for now
+	target_compile_options(Vic3MapUtils PRIVATE /W4)
 else ()
 	target_compile_options(Vic3MapUtils PRIVATE -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter)
 endif ()

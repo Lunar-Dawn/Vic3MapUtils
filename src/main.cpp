@@ -62,14 +62,12 @@ void handleApply(const ArgList &arguments) {
 		std::exit(1);
 	}
 
-	fs::path networkPath;
-	fs::path diffPath;
 	fs::path outputPath;
 
 	auto it = arguments.begin() + 2;
 
 	if (*it == "-o" || *it == "--output") {
-		it++;
+		++it;
 		outputPath = *it++;
 	} else {
 		outputPath = "diff.json";
@@ -79,17 +77,17 @@ void handleApply(const ArgList &arguments) {
 		printUsage(arguments);
 		std::exit(1);
 	}
-	networkPath = *it++;
+	const fs::path networkPath = *it++;
 
 	if (it == arguments.end()) {
 		printUsage(arguments);
 		std::exit(1);
 	}
-	diffPath = *it++;
+	const fs::path diffPath = *it++;
 
 	if (!checkFilesExist(networkPath, diffPath)) {
 		std::exit(1);
-	};
+	}
 
 	SplineNetwork network(networkPath);
 	network.applyDiff(json::parse(std::ifstream(diffPath)).get<Diff>());
@@ -108,7 +106,7 @@ void handleGenerate(const ArgList &arguments) {
 	auto it = arguments.begin() + 2;
 
 	if (*it == "-o" || *it == "--output") {
-		it++;
+		++it;
 		outputPath = *it++;
 	} else {
 		outputPath = "diff.json";
@@ -149,7 +147,7 @@ void handleFullMerge(const ArgList &arguments) {
 	auto it = arguments.begin() + 2;
 
 	if (*it == "-o" || *it == "--output") {
-		it++;
+		++it;
 		outputPath = *it++;
 		networkFiles.reserve(arguments.size() - 4);
 	} else {
@@ -192,7 +190,7 @@ void handleMerge(const ArgList &arguments) {
 	auto it = arguments.begin() + 2;
 
 	if (*it == "-o" || *it == "--output") {
-		it++;
+		++it;
 		outputPath = *it++;
 		networkFiles.reserve(arguments.size() - 4);
 	} else {
@@ -228,7 +226,7 @@ void handleMerge(const ArgList &arguments) {
 }
 
 int main(int argc, char *argv[]) {
-	ArgList arguments(argv, argv + argc);
+	const ArgList arguments(argv, argv + argc);
 
 	if (arguments.size() == 1) {
 		printUsage(arguments);

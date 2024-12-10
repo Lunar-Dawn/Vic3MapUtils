@@ -5,13 +5,10 @@
 #include "Route.hpp"
 #include "Strip.hpp"
 
-#include <algorithm>
 #include <cstdint>
 #include <filesystem>
-#include <fstream>
 #include <iostream>
 #include <map>
-#include <ranges>
 
 #include <fmt/ostream.h>
 
@@ -33,7 +30,7 @@ public:
 
 	/// Calculate the changes to, other
 	/// Usually called on the vanilla network with `other` being the modded network
-	Diff calculateDiff(const SplineNetwork &other);
+	[[nodiscard]] Diff calculateDiff(const SplineNetwork &other) const;
 	/// Apply the changes to this network
 	/// Usually called on the vanilla network
 	void applyDiff(Diff diff);
@@ -70,14 +67,13 @@ public:
 				    "\tThis is likely due to the area previously edited being heavily altered, be very careful.\n",
 				    deletedItem);
 				continue;
-			} else {
-				if (deletedItem != it->second) {
-					fmt::print(std::cerr,
-					           "{} data does not match previous version.\n"
-					           "\tThis is not necessarily a problem, some nodes may just have been nudged, but be "
-					           "careful.\n",
-					           deletedItem);
-				}
+			}
+			if (deletedItem != it->second) {
+				fmt::print(std::cerr,
+				           "{} data does not match previous version.\n"
+				           "\tThis is not necessarily a problem, some nodes may just have been nudged, but be "
+				           "careful.\n",
+				           deletedItem);
 			}
 			items.erase(it);
 		}

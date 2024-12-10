@@ -10,7 +10,7 @@
 class Route {
 	// Seems to be a 24-bit incremental ID, and an 8-bit type
 	// How does this type interact with multi-route Strips? No idea.
-	uint32_t _id;
+	uint32_t _id = -1;
 	std::vector<uint32_t> _anchors;
 
 public:
@@ -30,7 +30,7 @@ public:
 };
 
 template <> struct fmt::formatter<Route> : formatter<string_view> {
-	format_context::iterator format(const Route &a, format_context &ctx) const {
+	static format_context::iterator format(const Route &a, format_context &ctx) {
 		return format_to(ctx.out(), "Route #{}", a.id());
 	}
 };

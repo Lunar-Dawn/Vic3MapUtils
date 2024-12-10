@@ -71,7 +71,7 @@ void Diff::remapCollisions(std::set<uint32_t> anchorIds, std::set<uint32_t> rout
 
 	std::array<uint32_t, 4> newRouteIds = {1, 1, 1, 1};
 
-	for (auto &[id, route] : routeChanges.additions) {
+	for (const auto &id : routeChanges.additions | std::views::keys) {
 		if (!routeIds.contains(id)) {
 			routeIdRemapping[id] = id;
 			routeIds.emplace(id);
@@ -102,7 +102,9 @@ void Diff::remapCollisions(std::set<uint32_t> anchorIds, std::set<uint32_t> rout
 	}
 	routeChanges.additions = std::move(newRouteAdditions);
 
-	for (auto &[id, strip] : stripChanges.additions) {
+	// This doesn't need a new map to be transferred through,
+	// since the connected id are hub ids and never get remapped.
+	for (auto &strip : stripChanges.additions | std::views::values) {
 		if (anchorIdRemapping.contains(strip.sourceID()))
 			strip.sourceID(anchorIdRemapping.at(strip.sourceID()));
 		if (anchorIdRemapping.contains(strip.destinationID()))
