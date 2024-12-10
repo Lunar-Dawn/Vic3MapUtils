@@ -3,6 +3,8 @@ project(Vic3MapUtils)
 
 set(CMAKE_CXX_STANDARD 20)
 
+add_subdirectory(cmake)
+
 add_executable(Vic3MapUtils src/main.cpp
 		src/SplineNetwork/SplineNetwork.cpp
 		src/SplineNetwork/SplineNetwork.hpp
@@ -23,6 +25,7 @@ add_executable(Vic3MapUtils src/main.cpp
 		src/SplineNetwork/NetworkItemChanges.cpp
 		src/SplineNetwork/NetworkItemChanges.hpp
 )
+add_dependencies(Vic3MapUtils version)
 
 include(FetchContent)
 

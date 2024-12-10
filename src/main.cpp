@@ -9,6 +9,7 @@
 #include "SplineNetwork/Diff.hpp"
 #include "SplineNetwork/SplineNetwork.hpp"
 #include "util.hpp"
+#include "version.hpp"
 
 namespace fs = std::filesystem;
 using json = nlohmann::json;
@@ -28,6 +29,8 @@ void printUsage(const ArgList &arguments) {
 	       "Commands:\n"
 	       "    help, -h, --help\n"
 	       "        Print this help information\n"
+	       "    version, --version\n"
+	       "        Print version information\n"
 	       "    generate [-o <file>] <originalNetworkFile> <editedNetworkFile>\n"
 	       "        Generates a network diff file from the original (usually vanilla's) "
 	       "and the edited (usually your mod's) splnet files.\n"
@@ -48,6 +51,9 @@ void printUsage(const ArgList &arguments) {
 	       "but it will refuse to merge if any duplicate hub anchors exist, "
 	       "these will be printed for you to delete/merge manually.\n"
 	       "        The merged network will be saved as merged.splnet unless output is specified.\n";
+}
+void printVersion() {
+	std::cout << globals::programVersion << '\n';
 }
 
 void handleApply(const ArgList &arguments) {
@@ -232,6 +238,10 @@ int main(int argc, char *argv[]) {
 	const auto &command = arguments[1];
 	if (command == "help" || command == "-h" || command == "--help") {
 		printUsage(arguments);
+		return 0;
+	}
+	if (command == "version" || command == "--version") {
+		printVersion();
 		return 0;
 	}
 	if (command == "generate") {
