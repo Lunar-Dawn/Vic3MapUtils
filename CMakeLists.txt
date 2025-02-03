@@ -44,6 +44,15 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(json)
 target_link_libraries(Vic3MapUtils PRIVATE nlohmann_json::nlohmann_json)
 
+include(FetchContent)
+FetchContent_Declare(
+		argparse
+		GIT_REPOSITORY https://github.com/p-ranav/argparse.git
+		GIT_TAG 3eda91b2e1ce7d569f84ba295507c4cd8fd96910 # 3.2
+)
+FetchContent_MakeAvailable(argparse)
+target_link_libraries(Vic3MapUtils PRIVATE argparse)
+
 if (MSVC)
 	# I don't have easy access to MSVC, so /WX is disabled for now
 	target_compile_options(Vic3MapUtils PRIVATE /W4)

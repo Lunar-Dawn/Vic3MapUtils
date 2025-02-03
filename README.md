@@ -155,7 +155,7 @@ distribute their files, be on the safe side) will be ignored.**
 ## TODO
 
 - [ ] AppImage build for linux
-- [ ] Argument parsing is currently very manual and could do with a rewrite, especially if new features are introduced.
+- [x] Argument parsing is currently very manual and could do with a rewrite, especially if new features are introduced.
 - [ ] Several things might need sanity checking before being applied to a network, particularly concurrent edits.
 - [ ] Errors and Warnings are currently very ad-hoc, a real logging system is needed.
 - [ ] The great graph rewrite. In the beginning this project focused very hard on producing byte-identical files, this

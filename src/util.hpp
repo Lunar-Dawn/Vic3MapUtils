@@ -16,4 +16,4 @@ bool checkFilesExist(const Args &...files) {
 	}
 	return allFound;
 }
-bool checkFilesExist(std::span<std::filesystem::path> files);
+bool checkFilesExist(std::span<const std::filesystem::path> files);

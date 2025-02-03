@@ -4,6 +4,7 @@
 #include <string_view>
 #include <vector>
 
+#include <argparse/argparse.hpp>
 #include <nlohmann/json.hpp>
 
 #include "SplineNetwork/Diff.hpp"
@@ -14,115 +15,23 @@
 namespace fs = std::filesystem;
 using json = nlohmann::json;
 
-using ArgList = std::vector<std::string_view>;
+void handleApply(const argparse::ArgumentParser &arguments) {
+	const fs::path baseNetworkPath = arguments.get("BaseNetwork");
+	const fs::path diffPath = arguments.get("DiffFile");
+	const fs::path outputPath = arguments.is_used("-o") ? fs::path(arguments.get("-o")) : baseNetworkPath;
 
-// TODO: Revisit this, either using an argument parsing framework or making each command a class
-void printUsage(const ArgList &arguments) {
-	std::cout
-	    << "Usage: " << fs::path(arguments[0]).filename().string()
-	    << " <command> [options] <args>\n"
-	       "\n"
-	       "A utility to manipulate the .splnet files that describe the road network in Victoria 3.\n"
-	       "\n"
-	       "General Options:\n"
-	       "    -o <file>, --output <file>: Sets the output file name. Optional, default behaviour varies by command.\n"
-	       "Commands:\n"
-	       "    help, -h, --help\n"
-	       "        Print this help information\n"
-	       "    version, --version\n"
-	       "        Print version information\n"
-	       "    generate [-o <file>] <originalNetworkFile> <editedNetworkFile>\n"
-	       "        Generates a network diff file from the original (usually vanilla's) "
-	       "and the edited (usually your mod's) splnet files.\n"
-	       "        The diff will be saved as diff.json unless output is specified.\n"
-	       "    apply [-o <file>] <networkFile> <diff>\n"
-	       "        Applies the network diff to the splnet file (usually vanilla's).\n"
-	       "        The edited network will override the original unless output is specified.\n"
-	       "    merge [-o <file>] <baseNetworkFile> <editedNetwork>...\n"
-	       "        Merge the changes made in the edited networks as compared to the base network. "
-	       "Useful for git-style merge conflict resolution.\n"
-	       "        This will reindex Sub-Anchors and Route IDs, "
-	       "but it will refuse to merge if any duplicate hub anchors exist, "
-	       "these will be printed for you to delete/merge manually.\n"
-	       "        The merged network will be saved as merged.splnet unless output is specified.\n"
-	       "    full-merge [-o <file>] <networkFile> <networkFile>...\n"
-	       "        Merge two or more networks into one, containing all the anchors, strips, and routes.\n"
-	       "        This will reindex Sub-Anchors and Route IDs, "
-	       "but it will refuse to merge if any duplicate hub anchors exist, "
-	       "these will be printed for you to delete/merge manually.\n"
-	       "        The merged network will be saved as merged.splnet unless output is specified.\n";
-}
-void printVersion() {
-	std::cout << globals::programVersion << '\n';
-}
-
-void handleApply(const ArgList &arguments) {
-	if (arguments.size() < 4 || arguments.size() > 6) {
-		printUsage(arguments);
+	if (!checkFilesExist(baseNetworkPath, diffPath)) {
 		std::exit(1);
 	}
 
-	fs::path outputPath;
-
-	auto it = arguments.begin() + 2;
-
-	if (*it == "-o" || *it == "--output") {
-		++it;
-		outputPath = *it++;
-	} else {
-		outputPath = "diff.json";
-	}
-
-	if (it == arguments.end()) {
-		printUsage(arguments);
-		std::exit(1);
-	}
-	const fs::path networkPath = *it++;
-
-	if (it == arguments.end()) {
-		printUsage(arguments);
-		std::exit(1);
-	}
-	const fs::path diffPath = *it++;
-
-	if (!checkFilesExist(networkPath, diffPath)) {
-		std::exit(1);
-	}
-
-	SplineNetwork network(networkPath);
+	SplineNetwork network(baseNetworkPath);
 	network.applyDiff(json::parse(std::ifstream(diffPath)).get<Diff>());
 	network.writeToFile(outputPath);
 }
-void handleGenerate(const ArgList &arguments) {
-	if (arguments.size() < 4 || arguments.size() > 6) {
-		printUsage(arguments);
-		std::exit(1);
-	}
-
-	fs::path originalNetworkPath;
-	fs::path editedNetworkPath;
-	fs::path outputPath;
-
-	auto it = arguments.begin() + 2;
-
-	if (*it == "-o" || *it == "--output") {
-		++it;
-		outputPath = *it++;
-	} else {
-		outputPath = "diff.json";
-	}
-
-	if (it == arguments.end()) {
-		printUsage(arguments);
-		std::exit(1);
-	}
-	originalNetworkPath = *it++;
-
-	if (it == arguments.end()) {
-		printUsage(arguments);
-		std::exit(1);
-	}
-	editedNetworkPath = *it++;
+void handleGenerate(const argparse::ArgumentParser &arguments) {
+	const fs::path originalNetworkPath = arguments.get("BaseNetwork");
+	const fs::path editedNetworkPath = arguments.get("EditedNetwork");
+	const fs::path outputPath = arguments.get("-o");
 
 	if (!checkFilesExist(originalNetworkPath, editedNetworkPath)) {
 		std::exit(1);
@@ -135,41 +44,18 @@ void handleGenerate(const ArgList &arguments) {
 	std::ofstream outputFile(outputPath);
 	outputFile << jsonFile.dump(4) << '\n';
 }
-void handleFullMerge(const ArgList &arguments) {
-	if (arguments.size() < 4) {
-		printUsage(arguments);
-		std::exit(1);
-	}
+void handleFullMerge(const argparse::ArgumentParser &arguments) {
+	const auto networkFilesStr = arguments.get<std::vector<std::string>>("Networks");
+	const std::vector<fs::path> networkPaths(networkFilesStr.begin(), networkFilesStr.end());
+	const fs::path outputPath = arguments.get("-o");
 
-	std::vector<fs::path> networkFiles;
-	fs::path outputPath;
-
-	auto it = arguments.begin() + 2;
-
-	if (*it == "-o" || *it == "--output") {
-		++it;
-		outputPath = *it++;
-		networkFiles.reserve(arguments.size() - 4);
-	} else {
-		outputPath = "merged.splnet";
-		networkFiles.reserve(arguments.size() - 2);
-	}
-
-	std::copy(it, arguments.end(), std::back_inserter(networkFiles));
-
-	if (networkFiles.size() < 2) {
-		std::cerr << "Please provide at least 2 network files to merge.\n";
-		printUsage(arguments);
-		std::exit(1);
-	}
-
-	if (!checkFilesExist(networkFiles)) {
+	if (!checkFilesExist(networkPaths)) {
 		std::exit(1);
 	}
 
 	SplineNetwork emptyNetwork;
 	Diff mergedDiff;
-	for (const auto &path : networkFiles) {
+	for (const auto &path : networkPaths) {
 		SplineNetwork toMerge(path);
 		mergedDiff.mergeDiff(emptyNetwork.calculateDiff(toMerge));
 	}
@@ -177,46 +63,22 @@ void handleFullMerge(const ArgList &arguments) {
 	emptyNetwork.applyDiff(mergedDiff);
 	emptyNetwork.writeToFile(outputPath);
 }
-void handleMerge(const ArgList &arguments) {
-	if (arguments.size() < 5) {
-		printUsage(arguments);
-		std::exit(1);
-	}
-
-	fs::path basePath;
-	std::vector<fs::path> networkFiles;
-	fs::path outputPath;
-
-	auto it = arguments.begin() + 2;
-
-	if (*it == "-o" || *it == "--output") {
-		++it;
-		outputPath = *it++;
-		networkFiles.reserve(arguments.size() - 4);
-	} else {
-		outputPath = "merged.splnet";
-		networkFiles.reserve(arguments.size() - 2);
-	}
-
-	basePath = *it++;
-	std::copy(it, arguments.end(), std::back_inserter(networkFiles));
-
-	if (networkFiles.size() < 2) {
-		std::cerr << "Please provide at least 2 network files to merge.\n";
-		printUsage(arguments);
-		std::exit(1);
-	}
+void handleMerge(const argparse::ArgumentParser &arguments) {
+	fs::path basePath = arguments.get("BaseNetwork");
+	const auto networkFilesStr = arguments.get<std::vector<std::string>>("EditedNetworks");
+	const std::vector<fs::path> networkPaths(networkFilesStr.begin(), networkFilesStr.end());
+	fs::path outputPath = arguments.get("-o");
 
 	if (!checkFileExists(basePath)) {
 		std::exit(1);
 	}
-	if (!checkFilesExist(networkFiles)) {
+	if (!checkFilesExist(networkPaths)) {
 		std::exit(1);
 	}
 
 	SplineNetwork baseNetwork(basePath);
 	Diff mergedDiff;
-	for (const auto &path : networkFiles) {
+	for (const auto &path : networkPaths) {
 		SplineNetwork toMerge(path);
 		mergedDiff.mergeDiff(baseNetwork.calculateDiff(toMerge));
 	}
@@ -226,39 +88,86 @@ void handleMerge(const ArgList &arguments) {
 }
 
 int main(int argc, char *argv[]) {
-	const ArgList arguments(argv, argv + argc);
+	const auto reindexEpilog = "This will reindex Sub-Anchors and Route IDs, "
+	                           "but it will refuse to merge if any duplicate hub anchors exist, "
+	                           "these will be printed for you to delete/merge manually.";
 
-	if (arguments.size() == 1) {
-		printUsage(arguments);
+	const auto program_name = fs::path(argv[0]).filename().string();
+	argparse::ArgumentParser program(program_name, globals::programVersion);
+	program.add_description("A utility to manipulate the .splnet files that describe the road network in Victoria 3.");
+
+	argparse::ArgumentParser mergeParser("merge");
+	mergeParser
+	    .add_description("Merge the changes made in the edited networks as compared to the base network."
+	                     " Useful for git-style merge conflict resolution.")
+	    .add_epilog(reindexEpilog);
+	mergeParser.add_argument("-o", "--output")
+	    .help("The output file name. Optional, defaults to 'merged.splnet'.")
+	    .metavar("FILE")
+	    .default_value("merged.splnet");
+	mergeParser.add_argument("BaseNetwork").help("The base network everything is compared to.");
+	mergeParser.add_argument("EditedNetworks")
+	    .help("The edited networks.")
+	    .remaining()
+	    .nargs(1, std::numeric_limits<size_t>::max());
+
+	argparse::ArgumentParser generateParser("generate");
+	generateParser.add_description("Generates a network diff file from the original (usually vanilla's) "
+	                               "and the edited (usually your mod's) splnet files.");
+	generateParser.add_argument("-o", "--output")
+	    .help("The output file name. Optional, defaults to 'diff.json'.")
+	    .default_value("diff.json");
+	generateParser.add_argument("BaseNetwork").help("The base network file (Usually vanilla's).");
+	generateParser.add_argument("EditedNetwork").help("The edited network file (Usually your mod's).");
+
+	argparse::ArgumentParser applyParser("apply");
+	applyParser.add_description("Applies network changes to a base spline network.");
+	applyParser.add_argument("-o", "--output")
+	    .help("The output file name. Optional, defaults to overriding BaseNetwork.")
+	    .metavar("FILE");
+	applyParser.add_argument("BaseNetwork").help("The base spline network file (Usually vanilla's).");
+	applyParser.add_argument("DiffFile").help("The network change diff file.");
+
+	argparse::ArgumentParser fullMergeParser("full-merge");
+	fullMergeParser
+	    .add_description("Merge two or more networks into one, containing all the anchors, strips, and routes.")
+	    .add_epilog(reindexEpilog);
+	fullMergeParser.add_argument("-o", "--output")
+	    .help("The output file name. Optional, defaults to 'merged.splnet'.")
+	    .default_value("merged.splnet")
+	    .metavar("FILE");
+	fullMergeParser.add_argument("Networks")
+	    .help("Network files to merge.")
+	    .remaining()
+	    .nargs(2, std::numeric_limits<size_t>::max());
+
+	program.add_subparser(mergeParser);
+	program.add_subparser(generateParser);
+	program.add_subparser(applyParser);
+	program.add_subparser(fullMergeParser);
+
+	try {
+		program.parse_args(argc, argv);
+	} catch (const std::exception &err) {
+		std::cerr << err.what() << std::endl;
+		std::cerr << program;
 		return 1;
 	}
 
-	const auto &command = arguments[1];
-	if (command == "help" || command == "-h" || command == "--help") {
-		printUsage(arguments);
+	if (program.is_subcommand_used(mergeParser)) {
+		handleMerge(mergeParser);
 		return 0;
 	}
-	if (command == "version" || command == "--version") {
-		printVersion();
+	if (program.is_subcommand_used(generateParser)) {
+		handleGenerate(generateParser);
 		return 0;
 	}
-	if (command == "generate") {
-		handleGenerate(arguments);
+	if (program.is_subcommand_used(applyParser)) {
+		handleApply(applyParser);
 		return 0;
 	}
-	if (command == "apply") {
-		handleApply(arguments);
+	if (program.is_subcommand_used(fullMergeParser)) {
+		handleFullMerge(fullMergeParser);
 		return 0;
 	}
-	if (command == "full-merge") {
-		handleFullMerge(arguments);
-		return 0;
-	}
-	if (command == "merge") {
-		handleMerge(arguments);
-		return 0;
-	}
-
-	printUsage(arguments);
-	return 1;
 }
