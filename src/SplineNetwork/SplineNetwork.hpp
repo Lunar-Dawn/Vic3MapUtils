@@ -89,4 +89,6 @@ public:
 			items[id] = newItem;
 		}
 	}
+
+	NLOHMANN_DEFINE_TYPE_INTRUSIVE(SplineNetwork, _anchors, _routes, _strips);
 };

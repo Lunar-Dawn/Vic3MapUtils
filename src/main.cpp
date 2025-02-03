@@ -86,6 +86,24 @@ void handleMerge(const argparse::ArgumentParser &arguments) {
 	baseNetwork.applyDiff(mergedDiff);
 	baseNetwork.writeToFile(outputPath);
 }
+void handleExport(const argparse::ArgumentParser &arguments) {
+	const fs::path networkPath = arguments.get("NetworkFile");
+	const auto outputPath = arguments.get("-o");
+
+	SplineNetwork network(networkPath);
+
+	json jsonFile = network;
+	std::ofstream outputFile(outputPath);
+	outputFile << jsonFile.dump(4) << '\n';
+}
+void handleImport(const argparse::ArgumentParser &arguments) {
+	const fs::path jsonPath = arguments.get("JsonFile");
+	const auto outputPath = arguments.get("-o");
+
+	std::ifstream inputFile(jsonPath);
+	auto network = json::parse(inputFile).get<SplineNetwork>();
+	network.writeToFile(outputPath);
+}
 
 int main(int argc, char *argv[]) {
 	const auto reindexEpilog = "This will reindex Sub-Anchors and Route IDs, "
@@ -141,10 +159,28 @@ int main(int argc, char *argv[]) {
 	    .remaining()
 	    .nargs(2, std::numeric_limits<size_t>::max());
 
+	argparse::ArgumentParser exportParser("export");
+	exportParser.add_description(
+	    "Export the network to an intermediary json format. Useful for external tools or manual analysis.");
+	exportParser.add_argument("-o", "--output")
+	    .help("The output file name. Optional, defaults to 'network.json'.")
+	    .default_value("network.json")
+	    .metavar("FILE");
+	exportParser.add_argument("NetworkFile").help("The network file to export.");
+
+	argparse::ArgumentParser importParser("import");
+	importParser.add_description("Imports a json file and export it as a splnet file.");
+	importParser.add_argument("-o", "--output")
+	    .help("The output file name. Optional, defaults to 'spline_network.splnet'.")
+	    .default_value("spline_network.splnet");
+	importParser.add_argument("JsonFile").help("The json file to import.");
+
 	program.add_subparser(mergeParser);
 	program.add_subparser(generateParser);
 	program.add_subparser(applyParser);
 	program.add_subparser(fullMergeParser);
+	program.add_subparser(exportParser);
+	program.add_subparser(importParser);
 
 	try {
 		program.parse_args(argc, argv);
@@ -168,6 +204,14 @@ int main(int argc, char *argv[]) {
 	}
 	if (program.is_subcommand_used(fullMergeParser)) {
 		handleFullMerge(fullMergeParser);
+		return 0;
+	}
+	if (program.is_subcommand_used(exportParser)) {
+		handleExport(exportParser);
+		return 0;
+	}
+	if (program.is_subcommand_used(importParser)) {
+		handleImport(importParser);
 		return 0;
 	}
 }
